@@ -1,0 +1,35 @@
+{
+  "generated_utc": "2026-09-05T10:10:22+00:00",
+  "generated_by": "generate_paper_tables.py",
+  "argv": [],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "artifact": "paper_tables",
+  "results_dir": "C:\\Users\\deepi\\OneDrive\\Desktop\\srrt\\results",
+  "protocol": {
+    "split": "test",
+    "crop_mode": "center",
+    "crop_size": 256,
+    "num_images": 1111
+  },
+  "measured": [
+    "baseline_restormer",
+    "seecoder",
+    "seecoder_diffae",
+    "seecoder_diffae_lcr",
+    "seecoder_diffae_lcr_flow",
+    "full_srrt"
+  ],
+  "not_run": [],
+  "sources": {
+    "baseline_restormer": "results\\restormer_baseline\\summary.json",
+    "seecoder": "results\\seecoder\\summary.json",
+    "seecoder_diffae": "results\\seecoder_diffae\\summary.json",
+    "seecoder_diffae_lcr": "results\\seecoder_diffae_lcr\\summary.json",
+    "seecoder_diffae_lcr_flow": "results\\seecoder_diffae_lcr_flow\\summary.json",
+    "full_srrt": "results\\full_srrt\\summary.json"
+  },
+  "profile_json": null,
+  "missing_policy": "'--' / 'not run'; never interpolated"
+}

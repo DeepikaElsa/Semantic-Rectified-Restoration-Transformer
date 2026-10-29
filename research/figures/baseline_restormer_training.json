@@ -1,0 +1,41 @@
+{
+  "generated_utc": "2026-08-28T04:59:14+00:00",
+  "generated_by": "plot_training_curves.py",
+  "argv": [
+    "--experiment",
+    "baseline_restormer",
+    "--individual"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "training_curves",
+  "experiment": "baseline_restormer",
+  "source_log": "C:\\Users\\deepi\\OneDrive\\Desktop\\srrt\\logs\\baseline_restormer\\train_log.csv",
+  "epochs_logged": 60,
+  "epoch_range": [
+    0,
+    59
+  ],
+  "best": {
+    "train_loss": null,
+    "val_loss": {
+      "epoch": 58,
+      "value": 0.1708602643509706
+    },
+    "val_psnr": {
+      "epoch": 57,
+      "value": 28.913570035298665
+    },
+    "val_ssim": {
+      "epoch": 59,
+      "value": 0.8529095986837033
+    },
+    "val_lpips": {
+      "epoch": 58,
+      "value": 0.16793520584702493
+    },
+    "lr": null
+  },
+  "note": "Log read read-only; a torn trailing line, if any, was dropped. No axis limits were clamped."
+}

@@ -1,0 +1,80 @@
+{
+  "generated_utc": "2026-08-26T13:19:00+00:00",
+  "generated_by": "visualize_features.py",
+  "argv": [
+    "--checkpoint",
+    "checkpoints/baseline_restormer/best_psnr.pth",
+    "--formats",
+    "png"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "feature_channel_mean",
+  "checkpoint": "checkpoints/baseline_restormer/best_psnr.pth",
+  "experiment": "baseline_restormer",
+  "epoch": 22,
+  "modules_enabled": {
+    "seecoder": false,
+    "diffae": false,
+    "lcr": false,
+    "rectified_flow": false,
+    "sra": false
+  },
+  "dataset": "gopro",
+  "split": "test",
+  "image_ids": [
+    99
+  ],
+  "filename": "1087.png",
+  "seed": 42,
+  "crop_mode": "center",
+  "crop_size": 256,
+  "normalization": "input float32 [0,1]; each activation map min-max rescaled per panel",
+  "stages": {
+    "Encoder L1": [
+      1,
+      48,
+      256,
+      256
+    ],
+    "Encoder L2": [
+      1,
+      96,
+      128,
+      128
+    ],
+    "Encoder L3": [
+      1,
+      192,
+      64,
+      64
+    ],
+    "Encoder out": [
+      1,
+      384,
+      32,
+      32
+    ],
+    "Bottleneck (latent)": [
+      1,
+      384,
+      32,
+      32
+    ],
+    "Decoder": [
+      1,
+      96,
+      256,
+      256
+    ],
+    "Refinement": [
+      1,
+      96,
+      256,
+      256
+    ]
+  },
+  "extraction": "forward hooks, removed after one forward pass; no model modification",
+  "interpretation_limit": "Qualitative activation magnitude only. Panel brightness is min-max rescaled per panel and is NOT comparable across panels."
+}

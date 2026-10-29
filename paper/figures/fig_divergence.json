@@ -1,0 +1,7 @@
+{
+  "source": {
+    "pre_fix": "logs/seecoder_diffae_lcr_flow_200EP_ACCIDENTAL/train_log.csv (first run block)",
+    "post_fix": "logs/seecoder_diffae_lcr_flow/train_log.csv",
+    "lcr": "logs/seecoder_diffae_lcr/train_log.csv"
+  }
+}

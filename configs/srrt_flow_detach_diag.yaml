@@ -1,0 +1,121 @@
+experiment:
+  name: seecoder_diffae_lcr_flow_detach_diag
+  seed: 42
+  deterministic: false
+  save_dir: checkpoints/
+  log_dir: logs/
+  output_dir: outputs/
+  results_dir: results/
+dataset:
+  name: gopro
+  root: data/Gopro
+  train:
+    split: train
+    batch_size: 2
+    shuffle: true
+    num_workers: 4
+    drop_last: true
+    crop_size: 128
+    crop_mode: random
+    augment: true
+  val:
+    split: test
+    batch_size: 1
+    shuffle: false
+    num_workers: 2
+    drop_last: false
+    crop_size: 256
+    crop_mode: center
+    augment: false
+training:
+  epochs: 60
+  grad_accum_steps: 4
+  grad_clip_norm: 1.0
+  val_interval: 1
+  val_max_batches: 150
+  save_interval: 10
+  log_interval: 20
+  qualitative_samples: 4
+optimizer:
+  type: AdamW
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  betas:
+  - 0.9
+  - 0.999
+scheduler:
+  type: CosineAnnealingLR
+  T_max: 60
+  eta_min: 1.0e-06
+model:
+  latent_dim: 384
+  restormer:
+    in_channels: 3
+    out_channels: 3
+    dim: 48
+    num_heads:
+    - 1
+    - 2
+    - 4
+    - 8
+    encoder_blocks:
+    - 4
+    - 6
+    - 6
+    - 8
+    decoder_blocks:
+    - 6
+    - 6
+    - 4
+    refinement_blocks: 4
+    expansion_factor: 2.66
+    layer_norm_type: WithBias
+  modules:
+    seecoder:
+      enabled: true
+      embed_dim: 256
+    diffae:
+      enabled: true
+      latent_dim: 256
+    lcr:
+      enabled: true
+      hidden_dim: 384
+      proj_dim: 384
+      num_heads: 8
+      refinement_blocks: 2
+      dropout: 0.0
+    rectified_flow:
+      enabled: true
+      steps: 20
+      solver: euler
+      time_embed_dim: 256
+    sra:
+      enabled: false
+      num_heads: 4
+loss:
+  l1_weight: 1.0
+  perceptual_weight: 0.1
+  flow_weight: 0.1
+  consistency_weight: 0.1
+  perceptual_type: vgg19
+evaluation:
+  save_images: true
+  save_comparison_grid: true
+  metrics:
+  - PSNR
+  - SSIM
+  - LPIPS
+  lpips_net: alex
+logging:
+  tensorboard: true
+  csv: true
+  log_images: true
+checkpointing:
+  save_latest: true
+  save_best: true
+  best_metric: psnr
+  best_mode: max
+device:
+  gpu: 0
+  mixed_precision: true
+  max_memory_fraction: 0.85

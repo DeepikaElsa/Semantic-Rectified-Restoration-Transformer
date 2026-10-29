@@ -1,0 +1,56 @@
+{
+  "generated_utc": "2026-08-26T13:16:02+00:00",
+  "generated_by": "visualize_error_maps.py",
+  "argv": [
+    "--model",
+    "Restormer=checkpoints/baseline_restormer/best_psnr.pth",
+    "--num_samples",
+    "3",
+    "--formats",
+    "png"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "error_maps_squared_mean",
+  "dataset": "gopro",
+  "split": "test",
+  "image_ids": [
+    98,
+    727,
+    859
+  ],
+  "seed": 42,
+  "filenames": [
+    "1086.png",
+    "653.png",
+    "772.png"
+  ],
+  "crop_mode": "center",
+  "crop_size": 256,
+  "normalization": "float32 in [0,1]; predictions clipped to [0,1]",
+  "error_definition": "$E=\\frac{1}{3}\\sum_c (I_{pred,c}-I_{gt,c})^2$",
+  "colour_scale": "one scale per image row",
+  "vmax": "per-row",
+  "mean_error_per_model": {
+    "Restormer": 0.003234199481084943
+  },
+  "models": [
+    {
+      "name": "Restormer",
+      "checkpoint": "checkpoints/baseline_restormer/best_psnr.pth",
+      "epoch": 21,
+      "best_val_psnr": 26.401028022766113,
+      "experiment": "baseline_restormer",
+      "seed": 42,
+      "params_total": 26126644,
+      "modules_enabled": {
+        "seecoder": false,
+        "diffae": false,
+        "lcr": false,
+        "rectified_flow": false,
+        "sra": false
+      }
+    }
+  ]
+}

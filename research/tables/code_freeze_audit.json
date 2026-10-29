@@ -1,0 +1,879 @@
+{
+  "device": "cpu",
+  "input_size": 64,
+  "architecture": "tiny (audit only, not the trained config)",
+  "expected_matrix": {
+    "baseline_restormer": {
+      "seecoder": false,
+      "diffae": false,
+      "lcr": false,
+      "rectified_flow": false,
+      "sra": false
+    },
+    "seecoder": {
+      "seecoder": true,
+      "diffae": false,
+      "lcr": false,
+      "rectified_flow": false,
+      "sra": false
+    },
+    "seecoder_diffae": {
+      "seecoder": true,
+      "diffae": true,
+      "lcr": false,
+      "rectified_flow": false,
+      "sra": false
+    },
+    "seecoder_diffae_lcr": {
+      "seecoder": true,
+      "diffae": true,
+      "lcr": true,
+      "rectified_flow": false,
+      "sra": false
+    },
+    "seecoder_diffae_lcr_flow": {
+      "seecoder": true,
+      "diffae": true,
+      "lcr": true,
+      "rectified_flow": true,
+      "sra": false
+    },
+    "full_srrt": {
+      "seecoder": true,
+      "diffae": true,
+      "lcr": true,
+      "rectified_flow": true,
+      "sra": true
+    }
+  },
+  "records": [
+    {
+      "ablation": "baseline_restormer",
+      "enabled": {
+        "seecoder": false,
+        "diffae": false,
+        "lcr": false,
+        "rectified_flow": false,
+        "sra": false
+      },
+      "params": 800532,
+      "zero_gate_max_abs_error": 0.0,
+      "aux_losses": {
+        "rectified_flow": false,
+        "lcr": false
+      },
+      "loss_components": [
+        "l1"
+      ],
+      "connectivity": {},
+      "untrained_tensors": {}
+    },
+    {
+      "ablation": "seecoder",
+      "enabled": {
+        "seecoder": true,
+        "diffae": false,
+        "lcr": false,
+        "rectified_flow": false,
+        "sra": false
+      },
+      "params": 813958,
+      "zero_gate_max_abs_error": 0.0,
+      "gate_gamma_latent": 0.0,
+      "aux_losses": {
+        "rectified_flow": false,
+        "lcr": false
+      },
+      "loss_components": [
+        "l1"
+      ],
+      "connectivity": {
+        "seecoder": "32/32"
+      },
+      "untrained_tensors": {}
+    },
+    {
+      "ablation": "seecoder_diffae",
+      "enabled": {
+        "seecoder": true,
+        "diffae": true,
+        "lcr": false,
+        "rectified_flow": false,
+        "sra": false
+      },
+      "params": 895454,
+      "zero_gate_max_abs_error": 0.0,
+      "gate_gamma_latent": 0.0,
+      "aux_losses": {
+        "rectified_flow": false,
+        "lcr": false
+      },
+      "loss_components": [
+        "l1"
+      ],
+      "connectivity": {
+        "seecoder": "32/32",
+        "diffae": "20/24"
+      },
+      "untrained_tensors": {
+        "diffae": [
+          "diffae.semantic_head.0.weight",
+          "diffae.semantic_head.0.bias",
+          "diffae.semantic_head.2.weight",
+          "diffae.semantic_head.2.bias"
+        ]
+      }
+    },
+    {
+      "ablation": "seecoder_diffae_lcr",
+      "enabled": {
+        "seecoder": true,
+        "diffae": true,
+        "lcr": true,
+        "rectified_flow": false,
+        "sra": false
+      },
+      "params": 1001622,
+      "zero_gate_max_abs_error": 0.0,
+      "gate_gamma_latent": 0.0,
+      "aux_losses": {
+        "rectified_flow": false,
+        "lcr": true
+      },
+      "loss_components": [
+        "l1",
+        "lcr"
+      ],
+      "connectivity": {
+        "seecoder": "32/32",
+        "diffae": "20/24",
+        "lcr": "25/25"
+      },
+      "untrained_tensors": {
+        "diffae": [
+          "diffae.semantic_head.0.weight",
+          "diffae.semantic_head.0.bias",
+          "diffae.semantic_head.2.weight",
+          "diffae.semantic_head.2.bias"
+        ]
+      }
+    },
+    {
+      "ablation": "seecoder_diffae_lcr_flow",
+      "enabled": {
+        "seecoder": true,
+        "diffae": true,
+        "lcr": true,
+        "rectified_flow": true,
+        "sra": false
+      },
+      "params": 1031670,
+      "zero_gate_max_abs_error": 0.0,
+      "gate_gamma_latent": 0.0,
+      "gate_flow.proj_out.weight": 0.0,
+      "aux_losses": {
+        "rectified_flow": true,
+        "lcr": true
+      },
+      "loss_components": [
+        "flow",
+        "l1",
+        "lcr"
+      ],
+      "connectivity": {
+        "seecoder": "32/32",
+        "diffae": "20/24",
+        "lcr": "25/25",
+        "rectified_flow": "15/15"
+      },
+      "untrained_tensors": {
+        "diffae": [
+          "diffae.semantic_head.0.weight",
+          "diffae.semantic_head.0.bias",
+          "diffae.semantic_head.2.weight",
+          "diffae.semantic_head.2.bias"
+        ]
+      }
+    },
+    {
+      "ablation": "full_srrt",
+      "enabled": {
+        "seecoder": true,
+        "diffae": true,
+        "lcr": true,
+        "rectified_flow": true,
+        "sra": true
+      },
+      "params": 1040153,
+      "zero_gate_max_abs_error": 0.0,
+      "gate_gamma_latent": 0.0,
+      "gate_sra.gamma": 0.0,
+      "gate_flow.proj_out.weight": 0.0,
+      "aux_losses": {
+        "rectified_flow": true,
+        "lcr": true
+      },
+      "loss_components": [
+        "flow",
+        "l1",
+        "lcr"
+      ],
+      "connectivity": {
+        "seecoder": "32/32",
+        "diffae": "20/24",
+        "lcr": "25/25",
+        "rectified_flow": "15/15",
+        "sra": "14/14"
+      },
+      "untrained_tensors": {
+        "diffae": [
+          "diffae.semantic_head.0.weight",
+          "diffae.semantic_head.0.bias",
+          "diffae.semantic_head.2.weight",
+          "diffae.semantic_head.2.bias"
+        ]
+      }
+    }
+  ],
+  "checks": [
+    {
+      "group": "baseline_restormer",
+      "name": "model constructs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "module flags match expected matrix",
+      "passed": true,
+      "detail": "[False, False, False, False, False] vs [False, False, False, False, False]"
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "all parameters on target device",
+      "passed": true,
+      "detail": "['cpu']"
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "output shape == input shape",
+      "passed": true,
+      "detail": "(1, 3, 64, 64)"
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "forward output finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "== pure Restormer at init (bitwise)",
+      "passed": true,
+      "detail": "max|d|=0.000e+00"
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "flow_loss present iff rectified_flow enabled",
+      "passed": true,
+      "detail": "present=False enabled=False"
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "lcr_loss present iff lcr enabled",
+      "passed": true,
+      "detail": "present=False enabled=False"
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "total == sum of weighted components",
+      "passed": true,
+      "detail": "total=1.149562"
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "loss finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "gradients exist",
+      "passed": true,
+      "detail": "98 tensors"
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "all gradients finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "baseline_restormer",
+      "name": "optimizer updates parameters",
+      "passed": true,
+      "detail": "92/98 tensors changed"
+    },
+    {
+      "group": "seecoder",
+      "name": "model constructs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder",
+      "name": "module flags match expected matrix",
+      "passed": true,
+      "detail": "[True, False, False, False, False] vs [True, False, False, False, False]"
+    },
+    {
+      "group": "seecoder",
+      "name": "all parameters on target device",
+      "passed": true,
+      "detail": "['cpu']"
+    },
+    {
+      "group": "seecoder",
+      "name": "output shape == input shape",
+      "passed": true,
+      "detail": "(1, 3, 64, 64)"
+    },
+    {
+      "group": "seecoder",
+      "name": "forward output finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder",
+      "name": "== pure Restormer at init (bitwise)",
+      "passed": true,
+      "detail": "max|d|=0.000e+00"
+    },
+    {
+      "group": "seecoder",
+      "name": "gate gamma_latent == 0 at init",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "group": "seecoder",
+      "name": "flow_loss present iff rectified_flow enabled",
+      "passed": true,
+      "detail": "present=False enabled=False"
+    },
+    {
+      "group": "seecoder",
+      "name": "lcr_loss present iff lcr enabled",
+      "passed": true,
+      "detail": "present=False enabled=False"
+    },
+    {
+      "group": "seecoder",
+      "name": "total == sum of weighted components",
+      "passed": true,
+      "detail": "total=1.145706"
+    },
+    {
+      "group": "seecoder",
+      "name": "loss finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder",
+      "name": "gradients exist",
+      "passed": true,
+      "detail": "132 tensors"
+    },
+    {
+      "group": "seecoder",
+      "name": "all gradients finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder",
+      "name": "optimizer updates parameters",
+      "passed": true,
+      "detail": "93/132 tensors changed"
+    },
+    {
+      "group": "seecoder",
+      "name": "module 'seecoder' receives gradient",
+      "passed": true,
+      "detail": "32/32"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "model constructs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "module flags match expected matrix",
+      "passed": true,
+      "detail": "[True, True, False, False, False] vs [True, True, False, False, False]"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "all parameters on target device",
+      "passed": true,
+      "detail": "['cpu']"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "output shape == input shape",
+      "passed": true,
+      "detail": "(1, 3, 64, 64)"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "forward output finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "== pure Restormer at init (bitwise)",
+      "passed": true,
+      "detail": "max|d|=0.000e+00"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "gate gamma_latent == 0 at init",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "flow_loss present iff rectified_flow enabled",
+      "passed": true,
+      "detail": "present=False enabled=False"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "lcr_loss present iff lcr enabled",
+      "passed": true,
+      "detail": "present=False enabled=False"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "total == sum of weighted components",
+      "passed": true,
+      "detail": "total=1.142415"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "loss finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "gradients exist",
+      "passed": true,
+      "detail": "152 tensors"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "all gradients finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "optimizer updates parameters",
+      "passed": true,
+      "detail": "93/156 tensors changed"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "module 'seecoder' receives gradient",
+      "passed": true,
+      "detail": "32/32"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "module 'diffae' receives gradient",
+      "passed": true,
+      "detail": "20/24"
+    },
+    {
+      "group": "seecoder_diffae",
+      "name": "untrained tensors (reported, not a failure)",
+      "passed": true,
+      "detail": "4: diffae.semantic_head.0.weight, diffae.semantic_head.0.bias, diffae.semantic_head.2.weight, diffae.semantic_head.2.bias"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "model constructs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "module flags match expected matrix",
+      "passed": true,
+      "detail": "[True, True, True, False, False] vs [True, True, True, False, False]"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "all parameters on target device",
+      "passed": true,
+      "detail": "['cpu']"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "output shape == input shape",
+      "passed": true,
+      "detail": "(1, 3, 64, 64)"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "forward output finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "== pure Restormer at init (bitwise)",
+      "passed": true,
+      "detail": "max|d|=0.000e+00"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "gate gamma_latent == 0 at init",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "flow_loss present iff rectified_flow enabled",
+      "passed": true,
+      "detail": "present=False enabled=False"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "lcr_loss present iff lcr enabled",
+      "passed": true,
+      "detail": "present=True enabled=True"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "total == sum of weighted components",
+      "passed": true,
+      "detail": "total=1.146540"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "loss finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "gradients exist",
+      "passed": true,
+      "detail": "177 tensors"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "all gradients finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "optimizer updates parameters",
+      "passed": true,
+      "detail": "162/181 tensors changed"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "module 'seecoder' receives gradient",
+      "passed": true,
+      "detail": "32/32"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "module 'diffae' receives gradient",
+      "passed": true,
+      "detail": "20/24"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "module 'lcr' receives gradient",
+      "passed": true,
+      "detail": "25/25"
+    },
+    {
+      "group": "seecoder_diffae_lcr",
+      "name": "untrained tensors (reported, not a failure)",
+      "passed": true,
+      "detail": "4: diffae.semantic_head.0.weight, diffae.semantic_head.0.bias, diffae.semantic_head.2.weight, diffae.semantic_head.2.bias"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "model constructs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "module flags match expected matrix",
+      "passed": true,
+      "detail": "[True, True, True, True, False] vs [True, True, True, True, False]"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "all parameters on target device",
+      "passed": true,
+      "detail": "['cpu']"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "output shape == input shape",
+      "passed": true,
+      "detail": "(1, 3, 64, 64)"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "forward output finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "== pure Restormer at init (bitwise)",
+      "passed": true,
+      "detail": "max|d|=0.000e+00"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "gate gamma_latent == 0 at init",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "gate flow.proj_out.weight == 0 at init",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "flow_loss present iff rectified_flow enabled",
+      "passed": true,
+      "detail": "present=True enabled=True"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "lcr_loss present iff lcr enabled",
+      "passed": true,
+      "detail": "present=True enabled=True"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "total == sum of weighted components",
+      "passed": true,
+      "detail": "total=1.154725"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "loss finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "gradients exist",
+      "passed": true,
+      "detail": "192 tensors"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "all gradients finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "optimizer updates parameters",
+      "passed": true,
+      "detail": "169/196 tensors changed"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "module 'seecoder' receives gradient",
+      "passed": true,
+      "detail": "32/32"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "module 'diffae' receives gradient",
+      "passed": true,
+      "detail": "20/24"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "module 'lcr' receives gradient",
+      "passed": true,
+      "detail": "25/25"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "module 'rectified_flow' receives gradient",
+      "passed": true,
+      "detail": "15/15"
+    },
+    {
+      "group": "seecoder_diffae_lcr_flow",
+      "name": "untrained tensors (reported, not a failure)",
+      "passed": true,
+      "detail": "4: diffae.semantic_head.0.weight, diffae.semantic_head.0.bias, diffae.semantic_head.2.weight, diffae.semantic_head.2.bias"
+    },
+    {
+      "group": "full_srrt",
+      "name": "model constructs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "full_srrt",
+      "name": "module flags match expected matrix",
+      "passed": true,
+      "detail": "[True, True, True, True, True] vs [True, True, True, True, True]"
+    },
+    {
+      "group": "full_srrt",
+      "name": "all parameters on target device",
+      "passed": true,
+      "detail": "['cpu']"
+    },
+    {
+      "group": "full_srrt",
+      "name": "output shape == input shape",
+      "passed": true,
+      "detail": "(1, 3, 64, 64)"
+    },
+    {
+      "group": "full_srrt",
+      "name": "forward output finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "full_srrt",
+      "name": "== pure Restormer at init (bitwise)",
+      "passed": true,
+      "detail": "max|d|=0.000e+00"
+    },
+    {
+      "group": "full_srrt",
+      "name": "gate gamma_latent == 0 at init",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "group": "full_srrt",
+      "name": "gate sra.gamma == 0 at init",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "group": "full_srrt",
+      "name": "gate flow.proj_out.weight == 0 at init",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "group": "full_srrt",
+      "name": "flow_loss present iff rectified_flow enabled",
+      "passed": true,
+      "detail": "present=True enabled=True"
+    },
+    {
+      "group": "full_srrt",
+      "name": "lcr_loss present iff lcr enabled",
+      "passed": true,
+      "detail": "present=True enabled=True"
+    },
+    {
+      "group": "full_srrt",
+      "name": "total == sum of weighted components",
+      "passed": true,
+      "detail": "total=1.154210"
+    },
+    {
+      "group": "full_srrt",
+      "name": "loss finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "full_srrt",
+      "name": "gradients exist",
+      "passed": true,
+      "detail": "206 tensors"
+    },
+    {
+      "group": "full_srrt",
+      "name": "all gradients finite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "group": "full_srrt",
+      "name": "optimizer updates parameters",
+      "passed": true,
+      "detail": "170/210 tensors changed"
+    },
+    {
+      "group": "full_srrt",
+      "name": "module 'seecoder' receives gradient",
+      "passed": true,
+      "detail": "32/32"
+    },
+    {
+      "group": "full_srrt",
+      "name": "module 'diffae' receives gradient",
+      "passed": true,
+      "detail": "20/24"
+    },
+    {
+      "group": "full_srrt",
+      "name": "module 'lcr' receives gradient",
+      "passed": true,
+      "detail": "25/25"
+    },
+    {
+      "group": "full_srrt",
+      "name": "module 'rectified_flow' receives gradient",
+      "passed": true,
+      "detail": "15/15"
+    },
+    {
+      "group": "full_srrt",
+      "name": "module 'sra' receives gradient",
+      "passed": true,
+      "detail": "14/14"
+    },
+    {
+      "group": "full_srrt",
+      "name": "untrained tensors (reported, not a failure)",
+      "passed": true,
+      "detail": "4: diffae.semantic_head.0.weight, diffae.semantic_head.0.bias, diffae.semantic_head.2.weight, diffae.semantic_head.2.bias"
+    },
+    {
+      "group": "registry",
+      "name": "no unexpected ablations defined",
+      "passed": true,
+      "detail": "[]"
+    }
+  ],
+  "checks_passed": 106,
+  "checks_total": 106,
+  "all_passed": true
+}

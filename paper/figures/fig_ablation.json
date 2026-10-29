@@ -1,0 +1,10 @@
+{
+  "source": {
+    "baseline_restormer": "results/restormer_baseline/summary.json",
+    "seecoder": "results/seecoder/summary.json",
+    "seecoder_diffae": "results/seecoder_diffae/summary.json",
+    "seecoder_diffae_lcr": "results/seecoder_diffae_lcr/summary.json",
+    "seecoder_diffae_lcr_flow": "results/seecoder_diffae_lcr_flow/summary.json",
+    "full_srrt": "results/full_srrt/summary.json"
+  }
+}

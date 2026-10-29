@@ -1,0 +1,32 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Datasets (large; fetched separately)
+data/Gopro/
+data/Rain100H/
+data/RESIDE/
+data/LOL-v2/
+data/SIDD/
+data/DIV2K/
+
+# Run artifacts
+checkpoints/
+logs/
+outputs/
+results/
+runs/
+*.pth
+*.pt
+
+# OS / editor
+desktop.ini
+.DS_Store
+.vscode/
+.idea/

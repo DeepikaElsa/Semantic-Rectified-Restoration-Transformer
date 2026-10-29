@@ -1,0 +1,13 @@
+{
+  "images": [
+    "157.png",
+    "486.png"
+  ],
+  "crop": 512,
+  "zoom": 128,
+  "zoom_selection": "window maximising baseline-minus-SRRT squared error (favourable by construction; disclosed in caption)",
+  "checkpoints": [
+    "checkpoints/baseline_restormer/best_psnr.pth",
+    "checkpoints/seecoder_diffae_lcr_flow/best_psnr.pth"
+  ]
+}

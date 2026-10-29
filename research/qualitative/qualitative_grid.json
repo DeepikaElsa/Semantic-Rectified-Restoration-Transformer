@@ -1,0 +1,59 @@
+{
+  "generated_utc": "2026-08-26T13:27:08+00:00",
+  "generated_by": "generate_qualitative_grid.py",
+  "argv": [
+    "--model",
+    "Restormer=checkpoints/baseline_restormer/best_psnr.pth",
+    "--num_samples",
+    "2",
+    "--formats",
+    "png"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "qualitative_grid_combined",
+  "dataset": "gopro",
+  "split": "test",
+  "images": [
+    {
+      "index": 45,
+      "filename": "1038.png",
+      "zoom": [
+        2,
+        22,
+        64
+      ]
+    },
+    {
+      "index": 833,
+      "filename": "749.png",
+      "zoom": [
+        45,
+        86,
+        64
+      ]
+    }
+  ],
+  "seed": 42,
+  "selection_method": "random, seed=42",
+  "models": [
+    {
+      "name": "Restormer",
+      "checkpoint": "checkpoints/baseline_restormer/best_psnr.pth",
+      "epoch": 22,
+      "best_val_psnr": 26.717539278666177,
+      "experiment": "baseline_restormer",
+      "seed": 42,
+      "params_total": 26126644,
+      "modules_enabled": {
+        "seecoder": false,
+        "diffae": false,
+        "lcr": false,
+        "rectified_flow": false,
+        "sra": false
+      }
+    }
+  ],
+  "note": "Image IDs chosen before any model was loaded; identical for every model shown."
+}

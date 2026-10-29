@@ -1,0 +1,10 @@
+{
+  "source": {
+    "baseline_restormer": "logs/baseline_restormer/train_log.csv",
+    "seecoder": "logs/seecoder/train_log.csv",
+    "seecoder_diffae": "logs/seecoder_diffae/train_log.csv",
+    "seecoder_diffae_lcr": "logs/seecoder_diffae_lcr/train_log.csv",
+    "seecoder_diffae_lcr_flow": "logs/seecoder_diffae_lcr_flow/train_log.csv",
+    "full_srrt": "logs/full_srrt/train_log.csv"
+  }
+}

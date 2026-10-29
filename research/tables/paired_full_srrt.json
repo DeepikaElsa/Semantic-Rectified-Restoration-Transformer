@@ -1,0 +1,118 @@
+{
+  "baseline": {
+    "label": "A",
+    "dir": "results/restormer_baseline",
+    "experiment": "baseline_restormer",
+    "checkpoint": "checkpoints/baseline_restormer/best_psnr.pth",
+    "epoch": 57
+  },
+  "ablation": {
+    "label": "F",
+    "dir": "results/full_srrt",
+    "experiment": "full_srrt",
+    "checkpoint": "checkpoints\\full_srrt\\best_psnr.pth",
+    "epoch": 56
+  },
+  "protocol": {
+    "split": "test",
+    "crop_mode": "center",
+    "crop_size": 256,
+    "num_images": 1111
+  },
+  "protocol_mismatch": null,
+  "n_paired_images": 1111,
+  "images_only_in_baseline": [],
+  "images_only_in_ablation": [],
+  "delta_definition": "delta = F - A",
+  "metrics": {
+    "psnr": {
+      "n_images": 1111,
+      "mean": -0.0007844402530519426,
+      "median": -0.0038696983644079808,
+      "std": 0.36955028873754886,
+      "sem": 0.011087063029137445,
+      "ci95_mean": [
+        -0.022538404967148505,
+        0.020969524461044622
+      ],
+      "ci95_method": "Student-t on per-image differences",
+      "ci95_bootstrap": [
+        -0.022521234778909098,
+        0.020970078871624245
+      ],
+      "min": -1.7356038297141332,
+      "max": 2.551436663637382,
+      "improved_images": 550,
+      "worsened_images": 561,
+      "tied_images": 0,
+      "direction": "higher_better",
+      "ci_excludes_zero": false,
+      "paired_t_p": 0.9436072784624663,
+      "wilcoxon_p": 0.5045386024197787,
+      "cohens_d_paired": -0.002122688784067071,
+      "baseline_mean": 28.936928577551576,
+      "ablation_mean": 28.93614413729853
+    },
+    "ssim": {
+      "n_images": 1111,
+      "mean": 0.0006295663947406893,
+      "median": 0.00011154994044293431,
+      "std": 0.010056345981431562,
+      "sem": 0.0003017054650933522,
+      "ci95_mean": [
+        3.7589058232168526e-05,
+        0.00122154373124921
+      ],
+      "ci95_method": "Student-t on per-image differences",
+      "ci95_bootstrap": [
+        5.4054845482111454e-05,
+        0.0012432467887289287
+      ],
+      "min": -0.06642065263578689,
+      "max": 0.10733723643430737,
+      "improved_images": 578,
+      "worsened_images": 533,
+      "tied_images": 0,
+      "direction": "higher_better",
+      "ci_excludes_zero": true,
+      "paired_t_p": 0.03714373658721862,
+      "wilcoxon_p": 0.1684013011726545,
+      "cohens_d_paired": 0.06260389170212975,
+      "baseline_mean": 0.8660632949785182,
+      "ablation_mean": 0.866692861373259
+    },
+    "lpips": {
+      "n_images": 1111,
+      "mean": 0.0011222833796034623,
+      "median": 0.0003289617598056793,
+      "std": 0.008503570712142595,
+      "sem": 0.0002551198776770775,
+      "ci95_mean": [
+        0.000621711785280746,
+        0.0016228549739261788
+      ],
+      "ci95_method": "Student-t on per-image differences",
+      "ci95_bootstrap": [
+        0.0006315585605977871,
+        0.001637023107821841
+      ],
+      "min": -0.03122137486934662,
+      "max": 0.0961393415927887,
+      "improved_images": 528,
+      "worsened_images": 583,
+      "tied_images": 0,
+      "direction": "lower_better",
+      "ci_excludes_zero": true,
+      "paired_t_p": 1.1919002546100843e-05,
+      "wilcoxon_p": 0.0009830882874705318,
+      "cohens_d_paired": 0.13197789700283297,
+      "baseline_mean": 0.13555105491922742,
+      "ablation_mean": 0.13667333829883088
+    }
+  },
+  "caveats": [
+    "The 95% CI is over TEST IMAGES for one fixed pair of checkpoints. It is NOT a training-run variance estimate.",
+    "Each arm is a SINGLE training run. Run-to-run (seed) variance is unmeasured, so a significant per-image difference may still be seed noise rather than an effect of the module.",
+    "Validation and test are the same split in this repository, so both checkpoints were selected on the data they are scored on."
+  ]
+}

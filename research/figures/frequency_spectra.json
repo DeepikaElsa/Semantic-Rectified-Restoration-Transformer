@@ -1,0 +1,52 @@
+{
+  "generated_utc": "2026-08-26T13:17:41+00:00",
+  "generated_by": "visualize_frequency.py",
+  "argv": [
+    "--model",
+    "Restormer=checkpoints/baseline_restormer/best_psnr.pth",
+    "--num_samples",
+    "3",
+    "--formats",
+    "png"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "frequency_spectra",
+  "dataset": "gopro",
+  "split": "test",
+  "image_ids": [
+    98,
+    727,
+    859
+  ],
+  "seed": 42,
+  "filenames": [
+    "1086.png",
+    "653.png",
+    "772.png"
+  ],
+  "crop_mode": "center",
+  "crop_size": 256,
+  "normalization": "float32 [0,1]; Rec.601 luminance; log(1+|FFT2|), fftshift",
+  "colour_scale": "one scale per image row",
+  "interpretation_limit": "Descriptive only: high-frequency energy alone does not imply better restoration (hallucination and ringing also raise it).",
+  "models": [
+    {
+      "name": "Restormer",
+      "checkpoint": "checkpoints/baseline_restormer/best_psnr.pth",
+      "epoch": 22,
+      "best_val_psnr": 26.717539278666177,
+      "experiment": "baseline_restormer",
+      "seed": 42,
+      "params_total": 26126644,
+      "modules_enabled": {
+        "seecoder": false,
+        "diffae": false,
+        "lcr": false,
+        "rectified_flow": false,
+        "sra": false
+      }
+    }
+  ]
+}

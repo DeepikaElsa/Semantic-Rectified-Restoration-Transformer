@@ -1,0 +1,65 @@
+{
+  "runs": [
+    {
+      "label": "Restormer",
+      "experiment": "baseline_restormer",
+      "results_dir": "results/restormer_baseline",
+      "sources": {
+        "train_log": "logs\\baseline_restormer\\train_log.csv",
+        "summary": "results/restormer_baseline\\summary.json"
+      },
+      "notes": [
+        "2 epoch(s) >1500s excluded as system standby, not compute: ep9 (17303s), ep12 (5515s)"
+      ],
+      "epochs_completed": 60,
+      "train_time_h": 6.084240324033631,
+      "median_epoch_s": 349.2977775335312,
+      "excluded_outlier_epochs": [
+        [
+          9,
+          17303.019130945206
+        ],
+        [
+          12,
+          5515.437757492065
+        ]
+      ],
+      "peak_vram_train_mb": 5557.04833984375,
+      "peak_ram_train_mb": 3437.5703125,
+      "parameters": 26126644,
+      "inference_s": 0.21827092079209245,
+      "peak_vram_eval_mb": 6783.72802734375,
+      "eval_epoch": 57,
+      "modules_enabled": [],
+      "module_params": {},
+      "gflops": null
+    },
+    {
+      "label": "Restormer + SeeCoder",
+      "experiment": "seecoder",
+      "results_dir": "results/ablation_seecoder",
+      "sources": {
+        "train_log": "logs\\seecoder\\train_log.csv",
+        "run_metadata": "logs\\seecoder\\run_metadata.json"
+      },
+      "notes": [
+        "not evaluated yet (no summary.json under results/ablation_seecoder)"
+      ],
+      "epochs_completed": 18,
+      "train_time_h": 1.7747386961513096,
+      "median_epoch_s": 339.9308989048004,
+      "excluded_outlier_epochs": [],
+      "peak_vram_train_mb": 5463.232421875,
+      "peak_ram_train_mb": 2428.5,
+      "parameters": 26560329,
+      "modules_enabled": [
+        "seecoder"
+      ],
+      "gflops": null
+    }
+  ],
+  "gflops_available": false,
+  "gflops_reason": "neither `thop` nor `fvcore` is installed",
+  "outlier_seconds": 1500.0,
+  "caveat": "Train time and median epoch time are wall-clock on one laptop GPU under WDDM and are not a controlled benchmark; they are comparable to each other because both runs used the same machine and configuration."
+}

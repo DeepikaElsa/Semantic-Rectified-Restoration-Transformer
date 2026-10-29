@@ -1,0 +1,63 @@
+{
+  "generated_utc": "2026-08-26T13:27:29+00:00",
+  "generated_by": "generate_qualitative_grid.py",
+  "argv": [
+    "--model",
+    "Restormer=checkpoints/baseline_restormer/best_psnr.pth",
+    "--failure-cases",
+    "results/restormer_baseline_10ep/metrics/summary.json",
+    "--num_samples",
+    "3",
+    "--output_dir",
+    "research/qualitative/failure_cases",
+    "--formats",
+    "png"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "qualitative_error_maps",
+  "dataset": "gopro",
+  "split": "test",
+  "image_index": 790,
+  "filename": "71.png",
+  "image_ids": [
+    140,
+    471,
+    790
+  ],
+  "seed": 42,
+  "selection_method": "worst PSNR from results/restormer_baseline_10ep/metrics/summary.json (FAILURE CASES, not a random sample)",
+  "resolution": [
+    256,
+    256
+  ],
+  "crop_mode": "center",
+  "normalization": "float32 in [0,1]; predictions clipped to [0,1] for display",
+  "zoom_window": {
+    "top": 192,
+    "left": 188,
+    "size": 64,
+    "selected_by": "max gradient energy of the GROUND TRUTH (model-independent, exact search)"
+  },
+  "error_mode": "abs_mean",
+  "error_vmax": 0.6008754372596741,
+  "models": [
+    {
+      "name": "Restormer",
+      "checkpoint": "checkpoints/baseline_restormer/best_psnr.pth",
+      "epoch": 22,
+      "best_val_psnr": 26.717539278666177,
+      "experiment": "baseline_restormer",
+      "seed": 42,
+      "params_total": 26126644,
+      "modules_enabled": {
+        "seecoder": false,
+        "diffae": false,
+        "lcr": false,
+        "rectified_flow": false,
+        "sra": false
+      }
+    }
+  ]
+}

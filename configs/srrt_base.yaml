@@ -1,0 +1,196 @@
+# ==========================================================================
+# SRRT base configuration
+#
+# Every architecture and training hyperparameter lives here -- nothing is
+# hardcoded in Python. Values are INITIAL choices, not validated optima.
+# Where a value deviates from a published reference, the reason is in the
+# adjacent comment and in docs/design_decisions.md.
+# ==========================================================================
+
+experiment:
+  name: baseline_restormer      # also the results/<name>/ subdirectory
+  seed: 42
+  deterministic: false          # true forces deterministic cuDNN kernels (slower)
+  save_dir: checkpoints/
+  log_dir: logs/
+  output_dir: outputs/
+  results_dir: results/
+
+# ==========================================================================
+# Dataset
+# ==========================================================================
+
+dataset:
+  name: gopro          # key into data/datasets.py DATASET_REGISTRY
+  # GoPro only has train/ and test/ splits (no dedicated val/); test/ is
+  # used for periodic validation during training.
+  root: data/Gopro
+
+  train:
+    split: train
+    batch_size: 2
+    shuffle: true
+    num_workers: 4     # set to 0 when debugging DataLoader issues on Windows
+    drop_last: true
+    # 128x128 random crops match the *first* stage of the original Restormer
+    # paper's progressive-patch schedule (128 -> 160 -> 192 -> 256 -> 320 ->
+    # 384, batch size shrinking as patch size grows). Measured on an 8GB
+    # RTX 4070 Laptop: full 256x256 training needs ~6.2GB even at batch 1
+    # without perceptual loss -- too little headroom for the SRRT modules.
+    # 128x128 @ batch 2 + perceptual loss measures ~3.4GB.
+    crop_size: 128
+    crop_mode: random  # random | center | none
+    augment: true      # paired flips + 90-degree rotations
+
+  val:
+    split: test
+    batch_size: 1
+    shuffle: false
+    num_workers: 2
+    drop_last: false
+    # Deterministic center crop so validation PSNR is comparable across
+    # epochs. NOTE: published GoPro numbers are computed on FULL images --
+    # set crop_mode 'none' for protocol-comparable evaluation (slower, more
+    # VRAM). See docs/design_decisions.md.
+    crop_size: 256
+    crop_mode: center
+    augment: false
+
+# ==========================================================================
+# Training
+# ==========================================================================
+
+training:
+  epochs: 200
+
+  # Effective batch = dataset.train.batch_size * grad_accum_steps = 2 * 4 = 8.
+  grad_accum_steps: 4
+
+  # Max gradient L2 norm; 0 disables. The original Restormer does not clip,
+  # but clipping is kept on here for stability on a memory-tight laptop GPU.
+  grad_clip_norm: 1.0
+
+  val_interval: 1          # epochs between validation runs
+  # Per-epoch validation uses a SUBSET so epochs stay cheap; the full
+  # test set is measured once at the end via evaluate.py. Measured:
+  # 198 ms/image at 256px, so 1111 images = 3.7 min/epoch of pure
+  # validation against 6.5 min of training. null = use the full set.
+  val_max_batches: 150
+  save_interval: 10        # periodic checkpoints at epoch 10,20,30,... (plus latest + best_psnr)
+  log_interval: 20         # iterations between console/CSV loss logs
+  qualitative_samples: 4   # images per saved comparison grid
+
+optimizer:
+  type: AdamW
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  betas: [0.9, 0.999]
+
+scheduler:
+  type: CosineAnnealingLR
+  T_max: 200               # keep in sync with training.epochs
+  eta_min: 0.000001
+
+# ==========================================================================
+# Model
+#
+# `modules.*.enabled` drives the ablation study (see docs / spec section 19).
+# Disabling every module yields the pure Restormer baseline.
+# ==========================================================================
+
+model:
+
+  latent_dim: 384          # = restormer.dim * 8, the bottleneck width
+
+  restormer:
+    in_channels: 3
+    out_channels: 3
+    dim: 48
+    num_heads: [1, 2, 4, 8]        # 3 encoder levels + bottleneck
+    encoder_blocks: [4, 6, 6, 8]   # 3 encoder levels + bottleneck depth
+    decoder_blocks: [6, 6, 4]
+    refinement_blocks: 4
+    expansion_factor: 2.66
+    layer_norm_type: WithBias      # WithBias | BiasFree
+
+  modules:
+    seecoder:
+      enabled: false
+      embed_dim: 256
+
+    diffae:
+      enabled: false
+      latent_dim: 256
+
+    lcr:
+      enabled: false
+      hidden_dim: 384
+      proj_dim: 384
+      num_heads: 8
+      refinement_blocks: 2
+      dropout: 0.0
+
+    rectified_flow:
+      enabled: false
+      steps: 20            # ODE integration steps at inference
+      solver: euler        # euler (heun planned)
+      time_embed_dim: 256
+
+    sra:
+      enabled: false
+      num_heads: 4
+
+# ==========================================================================
+# Loss
+# ==========================================================================
+
+loss:
+  l1_weight: 1.0
+  perceptual_weight: 0.1
+  flow_weight: 0.1          # inert until rectified_flow is enabled
+  consistency_weight: 0.1   # inert until lcr is enabled
+
+  # VGG19 (not LPIPS) is used for the TRAINING perceptual term so that LPIPS
+  # stays an independent EVALUATION metric -- training directly on the metric
+  # you report inflates it. See docs/design_decisions.md.
+  perceptual_type: vgg19    # vgg19 | lpips
+
+# ==========================================================================
+# Evaluation
+# ==========================================================================
+
+evaluation:
+  save_images: true
+  save_comparison_grid: true
+  metrics: [PSNR, SSIM, LPIPS]
+  lpips_net: alex           # alex | vgg
+
+# ==========================================================================
+# Logging / checkpointing
+# ==========================================================================
+
+logging:
+  tensorboard: true
+  csv: true
+  log_images: true
+
+checkpointing:
+  save_latest: true
+  save_best: true
+  best_metric: psnr         # metric tracked for best_psnr.pth
+  best_mode: max            # max for PSNR/SSIM, min for LPIPS
+
+# ==========================================================================
+# Device
+# ==========================================================================
+
+device:
+  gpu: 0
+  mixed_precision: true
+
+  # Caps the CUDA allocator to this fraction of total dedicated VRAM. On
+  # Windows/WDDM, requests beyond dedicated VRAM can silently spill into slow
+  # "shared GPU memory" (system RAM) instead of raising a clean
+  # OutOfMemoryError -- that spillover is the likely cause of a prior
+  # full-system crash. Capping trades silent instability for a catchable OOM.
+  max_memory_fraction: 0.85

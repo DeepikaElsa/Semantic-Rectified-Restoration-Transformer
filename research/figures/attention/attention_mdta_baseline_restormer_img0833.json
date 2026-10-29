@@ -1,0 +1,136 @@
+{
+  "generated_utc": "2026-08-26T13:20:40+00:00",
+  "generated_by": "visualize_attention.py",
+  "argv": [
+    "--checkpoint",
+    "checkpoints/baseline_restormer/best_psnr.pth",
+    "--formats",
+    "png"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "mdta_channel_attention",
+  "checkpoint": "checkpoints/baseline_restormer/best_psnr.pth",
+  "experiment": "baseline_restormer",
+  "epoch": 22,
+  "dataset": "gopro",
+  "split": "test",
+  "image_ids": [
+    833
+  ],
+  "filename": "749.png",
+  "seed": 42,
+  "crop_mode": "center",
+  "crop_size": 256,
+  "normalization": "input float32 [0,1]",
+  "attention_semantics": "MDTA is channel (transposed) attention: the H*W axis is contracted, so the matrix is d x d over CHANNELS, not a spatial map.",
+  "tensor_dimensions": {
+    "qkv": "(B, num_heads, head_dim, H*W)",
+    "attention": "(B, num_heads, head_dim, head_dim)  <- channel x channel",
+    "output": "(B, num_heads, head_dim, H*W)"
+  },
+  "layers": {
+    "backbone.encoder.level1.blocks.0.attn": {
+      "shape_attention": [
+        1,
+        48,
+        48
+      ],
+      "feature_shape": [
+        1,
+        48,
+        256,
+        256
+      ],
+      "num_heads": 1,
+      "head_dim": 48,
+      "entropy_nats_per_head": [
+        3.6467628479003906
+      ],
+      "max_entropy_nats": 3.871201010907891,
+      "temperature_per_head": [
+        0.9438602328300476
+      ]
+    },
+    "backbone.encoder.level3.blocks.4.attn": {
+      "shape_attention": [
+        4,
+        48,
+        48
+      ],
+      "feature_shape": [
+        1,
+        192,
+        64,
+        64
+      ],
+      "num_heads": 4,
+      "head_dim": 48,
+      "entropy_nats_per_head": [
+        3.845208168029785,
+        3.854137420654297,
+        3.836125612258911,
+        3.8382949829101562
+      ],
+      "max_entropy_nats": 3.871201010907891,
+      "temperature_per_head": [
+        1.0427368879318237,
+        1.071915626525879,
+        1.0788520574569702,
+        1.0587515830993652
+      ]
+    },
+    "backbone.decoder.level3.blocks.5.attn": {
+      "shape_attention": [
+        4,
+        48,
+        48
+      ],
+      "feature_shape": [
+        1,
+        192,
+        64,
+        64
+      ],
+      "num_heads": 4,
+      "head_dim": 48,
+      "entropy_nats_per_head": [
+        3.8272688388824463,
+        3.8215227127075195,
+        3.823077440261841,
+        3.8260409832000732
+      ],
+      "max_entropy_nats": 3.871201010907891,
+      "temperature_per_head": [
+        1.0438765287399292,
+        1.057837963104248,
+        1.0605605840682983,
+        1.0642870664596558
+      ]
+    },
+    "backbone.refinement.blocks.3.attn": {
+      "shape_attention": [
+        1,
+        96,
+        96
+      ],
+      "feature_shape": [
+        1,
+        96,
+        256,
+        256
+      ],
+      "num_heads": 1,
+      "head_dim": 96,
+      "entropy_nats_per_head": [
+        4.427601337432861
+      ],
+      "max_entropy_nats": 4.564348191467836,
+      "temperature_per_head": [
+        0.9336290955543518
+      ]
+    }
+  },
+  "extraction": "forward pre-hook captured layer input; attention recomputed from the module's own weights. No architectural change."
+}

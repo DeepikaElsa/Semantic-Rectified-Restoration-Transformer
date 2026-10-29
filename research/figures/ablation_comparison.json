@@ -1,0 +1,50 @@
+{
+  "generated_utc": "2026-09-05T10:11:40+00:00",
+  "generated_by": "compare_ablation_results.py",
+  "argv": [],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "ablation_comparison",
+  "results_dir": "C:\\Users\\deepi\\OneDrive\\Desktop\\srrt\\results",
+  "protocol": {
+    "split": "test",
+    "crop_mode": "center",
+    "crop_size": 256,
+    "num_images": 1111
+  },
+  "measured": [
+    "baseline_restormer",
+    "seecoder",
+    "seecoder_diffae",
+    "seecoder_diffae_lcr",
+    "seecoder_diffae_lcr_flow",
+    "full_srrt"
+  ],
+  "not_run": [],
+  "sources": {
+    "baseline_restormer": "results\\restormer_baseline\\summary.json",
+    "seecoder": "results\\seecoder\\summary.json",
+    "seecoder_diffae": "results\\seecoder_diffae\\summary.json",
+    "seecoder_diffae_lcr": "results\\seecoder_diffae_lcr\\summary.json",
+    "seecoder_diffae_lcr_flow": "results\\seecoder_diffae_lcr_flow\\summary.json",
+    "full_srrt": "results\\full_srrt\\summary.json"
+  },
+  "checkpoints": {
+    "baseline_restormer": "checkpoints/baseline_restormer/best_psnr.pth",
+    "seecoder": "checkpoints\\seecoder\\best_psnr.pth",
+    "seecoder_diffae": "checkpoints\\seecoder_diffae\\best_psnr.pth",
+    "seecoder_diffae_lcr": "checkpoints\\seecoder_diffae_lcr\\best_psnr.pth",
+    "seecoder_diffae_lcr_flow": "checkpoints\\seecoder_diffae_lcr_flow\\best_psnr.pth",
+    "full_srrt": "checkpoints\\full_srrt\\best_psnr.pth"
+  },
+  "epochs": {
+    "baseline_restormer": 57,
+    "seecoder": 40,
+    "seecoder_diffae": 59,
+    "seecoder_diffae_lcr": 59,
+    "seecoder_diffae_lcr_flow": 5,
+    "full_srrt": 6
+  },
+  "note": "Unrun ablations are drawn hatched at zero and labelled 'not run'; no value is interpolated."
+}

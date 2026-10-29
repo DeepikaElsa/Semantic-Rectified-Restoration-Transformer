@@ -1,0 +1,66 @@
+{
+  "generated_utc": "2026-08-28T07:24:24+00:00",
+  "generated_by": "plot_convergence_comparison.py",
+  "argv": [
+    "--run",
+    "Restormer=baseline_restormer",
+    "--run",
+    "Restormer + SeeCoder=seecoder",
+    "--out-dir",
+    "research/figures",
+    "--stem",
+    "ablation_seecoder_convergence"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "convergence_comparison",
+  "runs": [
+    {
+      "label": "Restormer",
+      "experiment": "baseline_restormer",
+      "log": "logs\\baseline_restormer\\train_log.csv",
+      "epochs_logged": 60,
+      "best": {
+        "val_psnr": {
+          "epoch": 57,
+          "value": 28.913570035298665
+        },
+        "val_ssim": {
+          "epoch": 59,
+          "value": 0.8529095986837033
+        },
+        "val_lpips": {
+          "epoch": 58,
+          "value": 0.16793520584702493
+        }
+      }
+    },
+    {
+      "label": "Restormer + SeeCoder",
+      "experiment": "seecoder",
+      "log": "logs\\seecoder\\train_log.csv",
+      "epochs_logged": 18,
+      "best": {
+        "val_psnr": {
+          "epoch": 16,
+          "value": 25.837330360412597
+        },
+        "val_ssim": {
+          "epoch": 16,
+          "value": 0.7587988445559988
+        },
+        "val_lpips": {
+          "epoch": 16,
+          "value": 0.2866660306354364
+        }
+      }
+    }
+  ],
+  "panels": [
+    "val_psnr",
+    "val_ssim",
+    "val_lpips"
+  ],
+  "note": "Independent runs. Marked points are each run's own best epoch. Run-to-run variance is unmeasured; curve separation is not a controlled effect measurement."
+}

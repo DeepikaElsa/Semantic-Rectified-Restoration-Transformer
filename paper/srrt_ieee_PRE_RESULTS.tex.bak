@@ -1,0 +1,730 @@
+%=====================================================================
+%  SRRT --- IEEE conference paper (IEEEtran)
+%
+%  Compile:  pdflatex srrt_ieee && bibtex srrt_ieee && pdflatex srrt_ieee x2
+%  Requires: IEEEtran.cls  (bundled with TeX Live / MiKTeX, or use the
+%            "IEEE Conference" template on Overleaf)
+%
+%  STATUS OF THE EXPERIMENTAL RECORD AT TIME OF WRITING
+%  ----------------------------------------------------
+%  Measured : Restormer baseline, 60 epochs, evaluated on 1111 GoPro test images
+%  Measured : zero-gate equivalence for all six configurations
+%  Measured : parameter counts for all six configurations
+%  PENDING  : every SRRT ablation result. Cells marked "--" are NOT YET RUN.
+%             Do not fill them with anything but measured numbers.
+%=====================================================================
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Semantic Rectified Restoration Transformer:\\
+A Zero-Gated Modular Framework for\\
+Latent-Space Image Deblurring\\
+\thanks{Experimental study in progress. The ablation results required to
+validate the proposed modules had not completed at the time of writing; all
+such entries are explicitly marked as unmeasured.}}
+
+\author{\IEEEauthorblockN{Author One}
+\IEEEauthorblockA{\textit{Dept. of Computer Science and Engineering} \\
+\textit{Institution Name}\\
+City, Country \\
+email@domain}
+\and
+\IEEEauthorblockN{Author Two}
+\IEEEauthorblockA{\textit{Dept. of Computer Science and Engineering} \\
+\textit{Institution Name}\\
+City, Country \\
+email@domain}
+}
+
+\maketitle
+
+%=====================================================================
+\begin{abstract}
+Transformer backbones such as Restormer have become the standard for
+high-resolution image restoration, but they operate purely on low-level
+appearance statistics and carry no explicit notion of \emph{what} is being
+restored. We present the Semantic Rectified Restoration Transformer (SRRT), a
+modular framework that augments a Restormer backbone with a semantic latent
+pathway: a visual context encoder (SeeCoder), a damage-aware encoder (DiffAE),
+a latent consistency regularizer (LCR), a rectified-flow latent transport, and
+a semantic refinement attention block (SRA). Every module joins the backbone
+through a \emph{zero-initialized additive gate} at the bottleneck, so the
+untrained SRRT is bitwise identical to the backbone it extends. This makes the
+ablation ladder honest by construction: any measured difference is attributable
+to what a module learned, not to a perturbation it introduced at
+initialization. We further show that a zero-output equivalence test is
+\emph{insufficient} on its own---a gated module and a module wired to nothing
+both produce identical output---and we introduce a complementary gradient-flow
+connectivity test that distinguishes them. This test caught a genuine defect in
+our own implementation in which a module was instantiated, consumed compute,
+and never received gradient. We report a fully converged Restormer baseline
+(28.937~dB PSNR, 0.8661 SSIM, 0.1356 LPIPS on 1111 GoPro test crops) and two
+further admissible configurations, neither separating from that baseline by more
+than 0.08~dB. We additionally diagnose a catastrophic divergence in the
+rectified-flow configuration and trace it to two independent integration
+defects: a regression target left attached to the shared restoration encoder,
+which let the flow objective be minimized by degrading that encoder; and a
+train/inference latent mismatch that taught the model to rely on an encoding of
+the ground truth unavailable at test time. Each was isolated by a
+single-variable experiment, and correcting both removes the divergence.
+\textbf{No SRRT module is shown to improve restoration. This paper contributes
+the framework, the validation methodology, a converged baseline and a failure
+analysis---not a positive result.}
+\end{abstract}
+
+\begin{IEEEkeywords}
+image restoration, motion deblurring, vision transformer, semantic guidance,
+rectified flow, ablation methodology, reproducibility
+\end{IEEEkeywords}
+
+%=====================================================================
+\section{Introduction}
+
+Single-image motion deblurring is the task of recovering a sharp image
+$\hat{x}$ from a blurred observation $y$. Modern approaches are dominated by
+transformer architectures---Restormer~\cite{restormer}, SwinIR~\cite{swinir},
+Uformer~\cite{uformer}---which model long-range dependencies far more
+effectively than convolutional predecessors while remaining tractable at high
+resolution.
+
+These architectures share a limitation. They are trained end-to-end on pixel
+and perceptual reconstruction objectives, and therefore learn a mapping driven
+entirely by low-level appearance statistics. The network has no explicit
+representation of scene content, and no explicit representation of \emph{how}
+the image was degraded. When blur is severe, the reconstruction problem is
+ill-posed: many sharp images are consistent with the observation, and a purely
+appearance-driven prior has little basis for choosing among them.
+
+This paper investigates whether an explicit semantic latent pathway helps. We
+propose the Semantic Rectified Restoration Transformer (SRRT), which augments a
+Restormer backbone with five modules operating on the bottleneck latent, and we
+design the study so that the contribution of each module can be measured
+independently.
+
+Our contributions are:
+
+\begin{enumerate}
+\item \textbf{A modular semantic restoration architecture.} SRRT couples a
+Restormer backbone to a semantic pathway comprising a visual context encoder, a
+damage-aware encoder, a latent consistency regularizer, a rectified-flow
+latent transport, and a semantic refinement attention block
+(Section~\ref{sec:method}).
+
+\item \textbf{Zero-gated integration.} Every module joins through a
+zero-initialized additive gate, making untrained SRRT \emph{bitwise identical}
+to Restormer. We verify this empirically for all six configurations
+(Section~\ref{sec:zerogate}).
+
+\item \textbf{A connectivity test that zero-output equivalence cannot replace.}
+We show that identical output at initialization is a necessary but not
+sufficient condition for correct integration, and give a gradient-flow test
+that separates a correctly gated module from a disconnected one. This test
+caught a real defect in our implementation (Section~\ref{sec:connectivity}).
+
+\item \textbf{A converged baseline and an explicit, honest experimental
+record.} We report the baseline in full, mark every unmeasured cell, and state
+the protocol limitations that bound what the eventual results can claim
+(Sections~\ref{sec:results} and~\ref{sec:limitations}).
+\end{enumerate}
+
+%=====================================================================
+\section{Related Work}
+
+\subsection{Transformer-based image restoration}
+Restormer~\cite{restormer} makes high-resolution restoration tractable by
+replacing spatial self-attention with \emph{multi-Dconv head transposed
+attention} (MDTA), which computes attention across the \emph{channel}
+dimension. For a feature map of $H\!\times\!W$ pixels and $C$ channels this
+reduces cost from $\mathcal{O}((HW)^2 C)$ to $\mathcal{O}(HW\,C^2)$, i.e.\
+linear rather than quadratic in spatial size. SwinIR~\cite{swinir} and
+Uformer~\cite{uformer} instead constrain attention to shifted local windows.
+NAFNet~\cite{nafnet} shows that much of the gain is attributable to
+architectural simplification rather than attention itself.
+
+\subsection{Semantic guidance for restoration}
+Semantic priors have been used to condition restoration, typically through
+segmentation maps or CLIP-style embeddings. SeeCoder~\cite{seecoder}, developed
+for prompt-free diffusion, encodes an image into a dense visual context
+representation intended to substitute for a text prompt. We adopt it as a
+source of content-level context for the restoration latent.
+
+\subsection{Learned degradation representations}
+Diffusion autoencoders~\cite{diffae} learn a semantically meaningful,
+decodable latent. We use the same encoder design not to generate, but to
+produce a \emph{damage-aware} representation: a latent that encodes properties
+of the degradation rather than of the clean content. We stress that no
+disentanglement is guaranteed; the module is a learned representation and
+nothing more.
+
+\subsection{Flow-based transport}
+Rectified flow~\cite{rectifiedflow} learns a velocity field transporting one
+distribution to another along near-straight paths, permitting few-step
+integration. We apply it in latent space, transporting a degraded-image latent
+toward a clean-image latent, rather than in pixel space.
+
+%=====================================================================
+\section{Proposed Method}
+\label{sec:method}
+
+\subsection{Overview}
+SRRT keeps the Restormer encoder--bottleneck--decoder path intact and adds a
+parallel semantic pathway that meets the backbone at the \emph{bottleneck}. The
+bottleneck is the natural junction: it is the lowest-resolution, most semantic
+tensor in the network ($8C$ channels at $H/8 \times W/8$), so latent transport
+is cheap there, and the decoder still has three upsampling stages in which to
+propagate whatever the latent contributes.
+
+Given a degraded input $y \in \mathbb{R}^{3\times H\times W}$, the backbone
+encoder produces skip features and a bottleneck latent
+$\ell \in \mathbb{R}^{8C \times H/8 \times W/8}$. The semantic pathway produces
+a latent $z$ which is injected as
+
+\begin{equation}
+\ell' = \ell + \gamma \cdot W_{\text{inj}}(z),
+\label{eq:inject}
+\end{equation}
+
+where $W_{\text{inj}}$ is a $1\!\times\!1$ convolution and $\gamma$ is a scalar
+gate initialized to zero. The decoder then operates on $\ell'$.
+
+\subsection{Backbone}
+We use Restormer~\cite{restormer} with $C=48$, a four-level encoder, a
+three-level decoder with pixel-shuffle resampling, and a refinement stage. Each
+block pairs MDTA with a gated-Dconv feed-forward network (GDFN). MDTA computes
+
+\begin{equation}
+\mathrm{Attn}(Q,K,V) = V \cdot \mathrm{softmax}\!\left(
+\frac{\hat{Q}\hat{K}^{\top}}{\tau}\right),
+\label{eq:mdta}
+\end{equation}
+
+where $\hat{Q},\hat{K}$ are $\ell_2$-normalized along the spatial axis and the
+product $\hat{Q}\hat{K}^{\top}$ is $d\!\times\!d$ over channels---never
+$HW\!\times\!HW$. The network predicts a global residual, $\hat{x} = f(y) + y$.
+
+\subsection{Semantic modules}
+
+\textbf{SeeCoder} encodes $y$ into a dense visual context tensor at
+$H/8\times W/8$ with embedding width 256, using a lightweight multi-scale
+encoder followed by self-attention blocks.
+
+\textbf{DiffAE} encodes $y$ into a spatial damage latent at $H/8\times W/8$ and
+a globally pooled semantic code, intended to capture degradation
+characteristics.
+
+\textbf{LCR (Latent Consistency Regularizer)} fuses the visual and damage
+latents into an initial restoration latent $z_0$, and imposes a consistency
+objective against a reference latent $z_{\text{ref}}$ obtained by encoding the
+ground truth. Both are mapped through a \emph{shared} projection and
+$\ell_2$-normalized:
+
+\begin{equation}
+\mathcal{L}_{\text{cons}} = \left\|
+\frac{g(z_0)}{\|g(z_0)\|_2} -
+\frac{g(\mathrm{sg}[z_{\text{ref}}])}{\|g(\mathrm{sg}[z_{\text{ref}}])\|_2}
+\right\|_2^2 ,
+\label{eq:lcr}
+\end{equation}
+
+where $\mathrm{sg}[\cdot]$ is a stop-gradient. Normalization makes the
+objective scale-invariant, so it cannot be trivially minimized by shrinking
+latent norms; the stop-gradient prevents the reference from collapsing toward
+the prediction.
+
+\textbf{Rectified flow} transports $z_0$ toward the clean-image latent $z_1$.
+With $z_t = (1-t)z_0 + t z_1$ and target velocity $v^\star = z_1 - z_0$,
+
+\begin{equation}
+\mathcal{L}_{\text{flow}} = \mathbb{E}_{t\sim\mathcal{U}(0,1)}
+\left\| v_\theta(z_t, t) - (z_1 - z_0) \right\|_2^2 .
+\label{eq:flow}
+\end{equation}
+
+At inference $z_1$ is unavailable, so $\hat{z}_1$ is recovered by Euler
+integration of $v_\theta$ from $z_0$.
+
+\textbf{SRA (Semantic Refinement Attention)} applies a gated spatial attention
+map $A_s$ to the refined decoder features:
+$F' = F + \gamma_{\text{SRA}} \cdot A_s \odot R(F)$.
+
+\subsection{Zero-gated integration}
+\label{sec:zerogatemethod}
+Each module enters through a gate initialized to exactly zero: $\gamma=0$ in
+\eqref{eq:inject}, $\gamma_{\text{SRA}}=0$, and the rectified-flow output
+projection is zero-initialized so $v_\theta \equiv 0$ at initialization, making
+the ODE the identity map.
+
+The consequence is that at initialization, for every configuration,
+$\mathrm{SRRT}(y) = \mathrm{Restormer}(y)$ \emph{bitwise}. This is a
+methodological device, not an implementation detail: it guarantees that all
+rungs of the ablation ladder begin from the same function, so a measured
+difference cannot be an artifact of initialization noise injected by the added
+module.
+
+Gradient still flows to $\gamma$ itself at the first step
+($\partial \mathcal{L}/\partial \gamma = \langle \partial \mathcal{L}/\partial
+\ell',\, W_{\text{inj}}(z)\rangle \neq 0$), so the gate opens and the module
+begins to train from the second step onward.
+
+\subsection{Training objective}
+The total loss is
+
+\begin{equation}
+\mathcal{L} = \lambda_1 \mathcal{L}_{1}
+            + \lambda_p \mathcal{L}_{\text{perc}}
+            + \lambda_f \mathcal{L}_{\text{flow}}
+            + \lambda_c \mathcal{L}_{\text{cons}},
+\label{eq:total}
+\end{equation}
+
+with $\lambda_1=1.0$, $\lambda_p=0.1$ (VGG19 features~\cite{vgg}),
+$\lambda_f=0.1$, $\lambda_c=0.1$. The flow and consistency terms are included
+\emph{only} when their modules are enabled, so each rung of the ladder is
+trained under exactly the objective its architecture implies.
+
+%=====================================================================
+\section{Experimental Setup}
+\label{sec:setup}
+
+\subsection{Dataset}
+We use GoPro~\cite{gopro}: 2103 blurred/sharp training pairs and 1111 test
+pairs. Images are normalized to $[0,1]$. Training uses $128\times128$ random
+crops with augmentation; evaluation uses $256\times256$ center crops with no
+augmentation.
+
+\subsection{Training configuration}
+AdamW~\cite{adamw} ($\eta=2\times10^{-4}$, weight decay $10^{-4}$,
+$\beta=(0.9,0.999)$), batch size 2 with gradient accumulation 4 (effective
+batch 8), gradient clipping at 1.0, and cosine annealing~\cite{sgdr} with
+$T_{\max}$ equal to the epoch count and $\eta_{\min}=10^{-6}$. Mixed-precision
+training~\cite{amp} is enabled. Seed 42. All runs execute on a single NVIDIA
+RTX 4070 Laptop GPU (8~GB).
+
+Training length is 60 epochs, i.e.\ 1051 iterations per epoch and 15{,}720
+optimizer steps. Because $T_{\max}$ is tied to the epoch count, the learning
+rate reaches $\eta_{\min}$ exactly when training ends; a schedule sized for a
+different horizon would leave the model stopping mid-descent.
+
+\subsection{Metrics}
+PSNR, SSIM~\cite{ssim} and LPIPS~\cite{lpips} (AlexNet backbone). PSNR and SSIM
+are higher-better; LPIPS is lower-better.
+
+\subsection{Ablation design}
+Six configurations form a cumulative ladder (Table~\ref{tab:ladder}). Each
+differs from its predecessor by exactly one module, and all share the identical
+dataset, protocol, optimizer, schedule and seed policy.
+
+\begin{table}[t]
+\caption{Ablation ladder. Each rung adds exactly one module.}
+\label{tab:ladder}
+\centering
+\small
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+& Configuration & SeeC. & DiffAE & LCR & Flow & SRA \\
+\midrule
+A & \texttt{baseline\_restormer} & -- & -- & -- & -- & -- \\
+B & \texttt{seecoder}            & \checkmark & -- & -- & -- & -- \\
+C & \texttt{seecoder\_diffae}    & \checkmark & \checkmark & -- & -- & -- \\
+D & \texttt{..\_lcr}             & \checkmark & \checkmark & \checkmark & -- & -- \\
+E & \texttt{..\_lcr\_flow}       & \checkmark & \checkmark & \checkmark & \checkmark & -- \\
+F & \texttt{full\_srrt}          & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Validation methodology}
+\label{sec:connectivity}
+Before any configuration is trained we require two independent checks.
+
+\textbf{Zero-gate equivalence.} The output of each configuration at
+initialization must equal that of the bare backbone, given shared backbone
+weights.
+
+\textbf{Connectivity.} Every enabled module must receive non-zero gradient from
+the \emph{full} training objective after the gate has opened.
+
+The second check is not redundant. A module behind a zero gate and a module
+that is wired to nothing at all produce \emph{identical} output at
+initialization, and both pass the first check with an error of exactly zero.
+They differ only in what happens after the first optimizer step. In our own
+implementation, the SeeCoder pathway was initially constructed only when a
+downstream module was also enabled; the SeeCoder-only configuration therefore
+instantiated 335{,}380 parameters, consumed compute on every forward pass, and
+never received gradient. Perturbing every SeeCoder weight by
+$\mathcal{N}(0,10)$ changed the output by exactly $0.0$, and $0/44$ SeeCoder
+tensors had a gradient. The zero-gate check reported a perfect pass throughout.
+We consider this a general methodological point: \emph{equivalence tests
+validate initialization, not integration.}
+
+Additionally, the connectivity test must score the full objective. With
+rectified flow enabled the backbone is fed the supervised endpoint $z_1$ during
+training, so the SeeCoder$\rightarrow$LCR$\rightarrow z_0$ path reaches the loss
+through $\mathcal{L}_{\text{flow}}$ and $\mathcal{L}_{\text{cons}}$ rather than
+through the pixel term; a test scoring only the pixel loss would report those
+modules as disconnected.
+
+%=====================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{Zero-gate verification}
+\label{sec:zerogate}
+Table~\ref{tab:zerogate} reports the deviation of each configuration from the
+bare Restormer at initialization, on identical input with shared backbone
+weights. All six agree to \emph{exactly} zero---not merely within floating-point
+tolerance---because the gates are exactly zero and the products therefore vanish
+identically.
+
+\begin{table}[t]
+\caption{Zero-gate equivalence at initialization ($1\times3\times128\times128$
+input, float32, shared backbone weights).}
+\label{tab:zerogate}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Configuration & max $|\Delta|$ & mean $|\Delta|$ & rel. error \\
+\midrule
+A \texttt{baseline\_restormer}   & $0.000$ & $0.000$ & $0.000$ \\
+B \texttt{seecoder}              & $0.000$ & $0.000$ & $0.000$ \\
+C \texttt{seecoder\_diffae}      & $0.000$ & $0.000$ & $0.000$ \\
+D \texttt{..\_lcr}               & $0.000$ & $0.000$ & $0.000$ \\
+E \texttt{..\_lcr\_flow}         & $0.000$ & $0.000$ & $0.000$ \\
+F \texttt{full\_srrt}            & $0.000$ & $0.000$ & $0.000$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Gate values at initialization: $\gamma = 0$, $\gamma_{\text{SRA}} = 0$, and
+rectified-flow output projection weight and bias both $0$, giving
+$\max|v_\theta| = 0$.
+
+\subsection{Baseline}
+Table~\ref{tab:baseline} reports the Restormer baseline, trained for the full
+60-epoch cosine schedule and evaluated at its best-validation checkpoint
+(epoch~57) on all 1111 test images.
+
+\begin{table}[t]
+\caption{Restormer baseline. GoPro test split, 1111 images, $256\times256$
+center crops. Mean $\pm$ standard deviation across images.}
+\label{tab:baseline}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Model & PSNR (dB) $\uparrow$ & SSIM $\uparrow$ & LPIPS $\downarrow$ \\
+\midrule
+Restormer (60 ep, ep.\ 57) & $28.937 \pm 3.857$ & $0.8661 \pm 0.0919$
+& $0.1356 \pm 0.0841$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Validation PSNR was flat across the final four epochs (28.884, 28.914, 28.907,
+28.912; spread $\approx$0.03~dB) with the learning rate at $\eta_{\min}$,
+indicating the run ended at a schedule-consistent optimum rather than being
+truncated.
+
+\textbf{This is not a Restormer reproduction.} The published GoPro result of
+$\approx$32.9~dB uses full images and $\approx$300k iterations with a
+progressive $128\!\rightarrow\!384$ crop schedule; ours uses 15{,}720 steps at a
+fixed $128$~px crop and evaluates on $256$~px center crops. The gap is
+explained by training budget and evaluation geometry, and the two numbers are
+not comparable.
+
+\subsection{Computational cost}
+Table~\ref{tab:cost} gives parameter counts for every configuration, measured
+by direct instantiation. FLOP counts are not reported: no FLOP-counting library
+was installed in the measurement environment, and we decline to estimate a
+quantity that would be indistinguishable from a measured one in the table.
+
+\begin{table}[t]
+\caption{Parameter cost of each configuration. Accuracy columns are pending the
+ablation runs and are deliberately left unfilled.}
+\label{tab:cost}
+\centering
+\small
+\begin{tabular}{@{}llrr@{}}
+\toprule
+& Configuration & Parameters & $\Delta$ vs.\ A \\
+\midrule
+A & Restormer                 & 26{,}126{,}644 & --- \\
+B & + SeeCoder                & 26{,}560{,}329 & +1.7\% \\
+C & + DiffAE                  & 28{,}019{,}625 & +7.2\% \\
+D & + LCR                     & 33{,}098{,}709 & +26.7\% \\
+E & + Rectified Flow          & 37{,}166{,}677 & +42.3\% \\
+F & + SRA (full SRRT)         & 37{,}235{,}130 & +42.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Per-module parameter counts: SeeCoder 335{,}380; DiffAE 1{,}360{,}992; LCR
+5{,}128{,}236; rectified flow 4{,}067{,}968; SRA 68{,}453. The full model is
+42.5\% larger than the backbone, which is the cost any claimed gain must be
+weighed against. Baseline inference is 0.218~s per $256\times256$ image with
+6784~MB peak evaluation memory; training peaked at 5557~MB and took 6.08~h of
+compute.
+
+\subsection{Ablation results}
+\label{sec:ablationresults}
+
+\begin{table}[t]
+\caption{Ablation study, GoPro test split, 1111 images, $256\times256$ centre
+crops. Rows are reported only where the run satisfies the admissibility
+criteria of Section~\ref{sec:admissibility}; inadmissible rows are named, with
+the reason, rather than tabulated.}
+\label{tab:ablation}
+\centering
+\small
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+& Configuration & Ep. & PSNR (dB) & SSIM & LPIPS \\
+\midrule
+A & Restormer        & 57 & 28.937 & 0.8661 & 0.1356 \\
+B & + SeeCoder       & \multicolumn{4}{c}{\emph{inadmissible: 41/60 epochs}} \\
+C & + DiffAE         & 59 & 28.936 & 0.8668 & 0.1358 \\
+D & + LCR            & 59 & \textbf{29.014} & \textbf{0.8683} & \textbf{0.1322} \\
+E & + Rectified Flow & \multicolumn{4}{c}{\emph{inadmissible: diverged, best ep.\ 5}} \\
+F & Full SRRT        & \multicolumn{4}{c}{\emph{inadmissible: diverged, best ep.\ 6}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Admissibility}
+\label{sec:admissibility}
+A run enters Table~\ref{tab:ablation} only if it completed its full 60-epoch
+cosine schedule with the learning rate reaching $\eta_{\min}$. Three runs fail
+this test and are excluded:
+
+\begin{itemize}
+\item \textbf{B} stopped at epoch 40 of 60 with the learning rate still at
+$4.63\times10^{-5}$. Its measured 28.496~dB is therefore the score of a model
+that trained 19 fewer epochs and never annealed. Reporting it beside the fully
+annealed baseline would invite the false reading that SeeCoder costs 0.44~dB,
+when the deficit is confounded with training length.
+\item \textbf{E} and \textbf{F} diverged (Section~\ref{sec:flowfailure}). Their
+best checkpoints are epochs 5 and 6 of 60.
+\end{itemize}
+
+Among admissible rows, C is statistically indistinguishable from the baseline
+($-0.001$~dB) and D is $+0.077$~dB above it. Both differences are far smaller
+than the unmeasured run-to-run variance discussed in
+Section~\ref{sec:limitations}, and we therefore claim no improvement from any
+module. The correct reading of Table~\ref{tab:ablation} is that no SRRT
+component has yet been shown to help.
+
+\textbf{Statistical protocol.} Because arms are evaluated on the identical image
+set, differences are assessed \emph{pairwise per image}: mean, median, standard
+deviation, a 95\% confidence interval on the mean difference, win/loss counts
+and a Wilcoxon signed-rank test. Such an interval quantifies sampling over
+\emph{test images} for one fixed pair of checkpoints. It is not a training-run
+variance estimate, and with a single run per arm a statistically significant
+per-image difference may still reflect seed noise.
+
+\subsection{Failure analysis of the rectified-flow integration}
+\label{sec:flowfailure}
+
+Configurations E and F did not merely score poorly: they diverged. E fell from
+24.098~dB at epoch~5 to 14.527~dB at epoch~6 and reached 6.606~dB by epoch~9,
+while D---identical but for the flow module---climbed monotonically past 24.6~dB
+over the same epochs. Diagnosis identified two independent defects, each
+isolated by a single-variable 10-epoch experiment.
+
+\textbf{Defect 1: the regression target was trainable.} The velocity target
+$v^\star = z_1 - z_0$ was formed with $z_1$ still attached to the graph. Because
+$z_1$ is produced by the \emph{shared restoration encoder},
+$\mathcal{L}_{\text{flow}}$ could be reduced by moving $z_1$ toward $z_0$---that
+is, by degrading the encoder the restoration path depends on---which is an
+easier descent direction than learning $v_\theta$. Measured gradient norms
+confirm this: $\mathcal{L}_{\text{flow}}$ deposited \emph{more} gradient on the
+encoder ($4.23\times10^{-2}$) than on the velocity network it was meant to train
+($1.97\times10^{-2}$). The signature is diagnostic: over the failed run
+$\mathcal{L}_{\text{flow}}$ fell $31\times$ while validation PSNR fell 10~dB.
+The objective was being satisfied by destroying the encoder. Detaching $z_1$
+drives encoder gradient to exactly zero and removes the collapse.
+
+\textbf{Defect 2: train/inference latent mismatch.} With the collapse removed, a
+second pathology dominated: training injected $z_1$---an encoding of the ground
+truth---into the bottleneck, while inference injects $\mathrm{integrate}(z_0)$.
+The model learned to rely on information unavailable at test time. The gate grew
+$318\times$ in ten epochs, training loss fell from 0.223 to 0.169 while
+validation loss \emph{rose} from 0.241 to 0.298, and on the resulting checkpoint
+the same weights scored 24.819~dB with $z_1$ injected against 18.946~dB with the
+ODE latent---a 5.874~dB train/inference gap. Injecting $z_0$ during training, so
+that the injected tensor derives only from the degraded input, closes this gap
+to $0.000$~dB.
+
+\begin{table}[t]
+\caption{Rectified-flow diagnostics, 10 epochs each, identical to E in every
+hyperparameter. Each row changes exactly one thing relative to the row above.}
+\label{tab:flowdiag}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Configuration & PSNR ep.\ 6 & PSNR ep.\ 9 & GT/ODE gap \\
+\midrule
+E, as published            & 14.527 & 6.606  & --- \\
++ detached $z_1$           & 22.846 & 20.250 & 5.874 dB \\
++ inject $z_0$             & \textbf{24.263} & \textbf{24.596} & \textbf{0.000 dB} \\
+\midrule
+D (+LCR), no flow          & 24.250 & 24.625 & n/a \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:flowdiag} summarises the two interventions. With both applied the
+flow configuration tracks D to within 0.03~dB at epoch~9 and shows no collapse
+or divergence. We stress what this does \emph{not} establish: at that point
+$\gamma \approx 1.8\times10^{-3}$, so the flow branch contributes almost nothing
+to the output. The corrected configuration is demonstrably no longer
+\emph{harmful}; whether it \emph{helps} requires the full 60-epoch run, which
+had not completed at the time of writing. E and F must be retrained before
+either can appear in Table~\ref{tab:ablation}.
+
+%=====================================================================
+\section{Discussion and Limitations}
+\label{sec:limitations}
+
+We state the limitations that bound what this study can conclude, including
+those not yet resolved.
+
+\textbf{Validation and test are the same split.} The validation loader reads
+the GoPro test split, so best-checkpoint selection and reported metrics use the
+same 1111 images. There is no held-out third split. Reported figures are
+therefore validation numbers and may be mildly optimistic through model
+selection. This is a limitation of the present protocol and should be corrected
+by carving a validation subset from the training split.
+
+\textbf{Run-to-run variance is unmeasured.} Each configuration is trained once.
+Without a seed-repeat study, no threshold exists below which a difference is
+indistinguishable from training noise. We regard a seed-repeat of the baseline
+as a prerequisite for interpreting small effects.
+
+\textbf{Training budget.} At 15{,}720 optimizer steps and a fixed $128$~px crop,
+all configurations are far from the published Restormer training budget. Module
+benefits that require longer training, or larger crops, would not appear here.
+
+\textbf{Train/inference asymmetry in the flow path.} During training the
+backbone is injected with the supervised endpoint $z_1$; at inference it
+receives the ODE solution $\hat{z}_1$. This exposure bias is unaddressed.
+
+\textbf{Untrained sub-block.} The DiffAE semantic head (131{,}584 parameters)
+is computed on every forward pass but does not enter the objective; it is
+surfaced only for visualization. It inflates the parameter counts of
+configurations C--F and should be either removed or given a loss before those
+configurations are compared.
+
+\textbf{Scope.} Only GoPro motion deblurring is evaluated. Loss weights are
+defaults and untuned.
+
+%=====================================================================
+\section{Conclusion}
+
+We presented SRRT, a modular framework that attaches a semantic latent pathway
+to a Restormer backbone through zero-initialized gates, together with the
+validation methodology needed to make its ablation study trustworthy. We
+reported a converged baseline, verified bitwise zero-gate equivalence for all
+six configurations, and accounted for the parameter cost of each.
+
+Our main transferable findings are methodological, and both concern ways an
+ablation study can silently measure the wrong thing.
+
+First, \emph{a zero-output equivalence test is insufficient to establish that a
+module is integrated}. A correctly gated module and a disconnected one are
+indistinguishable under such a test, and only a gradient-flow check separates
+them. This is not hypothetical: it occurred in our implementation and was
+invisible to an equivalence test reporting a perfect pass.
+
+Second, \emph{an auxiliary objective whose regression target is produced by a
+shared trainable component has a degenerate solution}. Our flow loss could be
+minimized by corrupting the restoration encoder rather than by learning the
+velocity field, and it preferentially did so---depositing more gradient on the
+encoder than on the network it was meant to train. The loss fell $31\times$
+while the metric it was supposed to help fell 10~dB. Any auxiliary loss of this
+shape should detach its target, and a falling auxiliary loss alongside a falling
+task metric should be treated as a symptom rather than a curiosity.
+
+The question this framework was built to answer---whether semantic latent
+guidance improves transformer-based deblurring, and which module is
+responsible---remains open, and the evidence so far is not encouraging: the two
+admissible SRRT configurations differ from the baseline by at most 0.08~dB,
+which is well inside the unmeasured run-to-run variance. Establishing whether
+any module helps requires the corrected flow runs, a seed-repeat study to
+calibrate that variance, and a training budget closer to the literature's. We
+will report those outcomes, including negative ones, under the statistical
+protocol of Section~\ref{sec:ablationresults}.
+
+%=====================================================================
+\begin{thebibliography}{00}
+
+\bibitem{restormer} S.~W. Zamir, A.~Arora, S.~Khan, M.~Hayat, F.~S. Khan, and
+M.-H. Yang, ``Restormer: Efficient transformer for high-resolution image
+restoration,'' in \emph{Proc. IEEE/CVF CVPR}, 2022, pp.~5728--5739.
+
+\bibitem{swinir} J.~Liang, J.~Cao, G.~Sun, K.~Zhang, L.~Van Gool, and
+R.~Timofte, ``SwinIR: Image restoration using Swin transformer,'' in
+\emph{Proc. IEEE/CVF ICCV Workshops}, 2021, pp.~1833--1844.
+
+\bibitem{uformer} Z.~Wang, X.~Cun, J.~Bao, W.~Zhou, J.~Liu, and H.~Li,
+``Uformer: A general U-shaped transformer for image restoration,'' in
+\emph{Proc. IEEE/CVF CVPR}, 2022, pp.~17683--17693.
+
+\bibitem{nafnet} L.~Chen, X.~Chu, X.~Zhang, and J.~Sun, ``Simple baselines for
+image restoration,'' in \emph{Proc. ECCV}, 2022, pp.~17--33.
+
+\bibitem{gopro} S.~Nah, T.~H. Kim, and K.~M. Lee, ``Deep multi-scale
+convolutional neural network for dynamic scene deblurring,'' in \emph{Proc.
+IEEE CVPR}, 2017, pp.~3883--3891.
+
+\bibitem{seecoder} X.~Xu, J.~Guo, Z.~Wang, G.~Huang, I.~Essa, and H.~Shi,
+``Prompt-free diffusion: Taking ``text'' out of text-to-image diffusion
+models,'' in \emph{Proc. IEEE/CVF CVPR}, 2024.
+
+\bibitem{diffae} K.~Preechakul, N.~Chatthee, S.~Wizadwongsa, and
+S.~Suwajanakorn, ``Diffusion autoencoders: Toward a meaningful and decodable
+representation,'' in \emph{Proc. IEEE/CVF CVPR}, 2022, pp.~10619--10629.
+
+\bibitem{rectifiedflow} X.~Liu, C.~Gong, and Q.~Liu, ``Flow straight and fast:
+Learning to generate and transfer data with rectified flow,'' in \emph{Proc.
+ICLR}, 2023.
+
+\bibitem{ssim} Z.~Wang, A.~C. Bovik, H.~R. Sheikh, and E.~P. Simoncelli,
+``Image quality assessment: From error visibility to structural similarity,''
+\emph{IEEE Trans. Image Process.}, vol.~13, no.~4, pp.~600--612, 2004.
+
+\bibitem{lpips} R.~Zhang, P.~Isola, A.~A. Efros, E.~Shechtman, and O.~Wang,
+``The unreasonable effectiveness of deep features as a perceptual metric,'' in
+\emph{Proc. IEEE/CVF CVPR}, 2018, pp.~586--595.
+
+\bibitem{vgg} K.~Simonyan and A.~Zisserman, ``Very deep convolutional networks
+for large-scale image recognition,'' in \emph{Proc. ICLR}, 2015.
+
+\bibitem{adamw} I.~Loshchilov and F.~Hutter, ``Decoupled weight decay
+regularization,'' in \emph{Proc. ICLR}, 2019.
+
+\bibitem{sgdr} I.~Loshchilov and F.~Hutter, ``SGDR: Stochastic gradient descent
+with warm restarts,'' in \emph{Proc. ICLR}, 2017.
+
+\bibitem{amp} P.~Micikevicius \emph{et al.}, ``Mixed precision training,'' in
+\emph{Proc. ICLR}, 2018.
+
+\end{thebibliography}
+
+\end{document}

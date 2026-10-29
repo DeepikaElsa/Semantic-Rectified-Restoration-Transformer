@@ -1,0 +1,16 @@
+{
+  "generated_utc": "2026-08-28T04:59:17+00:00",
+  "generated_by": "plot_training_curves.py",
+  "argv": [
+    "--experiment",
+    "baseline_restormer",
+    "--individual"
+  ],
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "git_hash": null,
+  "figure": "training_train_loss",
+  "experiment": "baseline_restormer",
+  "source_log": "C:\\Users\\deepi\\OneDrive\\Desktop\\srrt\\logs\\baseline_restormer\\train_log.csv",
+  "epochs_logged": 60
+}
